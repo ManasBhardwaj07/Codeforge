@@ -6,6 +6,7 @@ This repository is developed phase by phase. The current implementation includes
 
 - Phase 1: Project foundation
 - Phase 2: Core relational data model with migrations, seed data, and QA checks
+- Phase 3: JWT authentication, protected routes, and submission entry API
 
 ## Core Goal
 
@@ -41,6 +42,7 @@ prisma/
 	migrations/
 	seed.ts
 	phase2-qa.ts
+	phase3-qa.ts
 ```
 
 ## Current Data Model (Phase 2)
@@ -97,6 +99,7 @@ npm run db:seed
 
 ```bash
 npm run qa:phase2
+npm run qa:phase3
 ```
 
 ### 6. Start app
@@ -120,16 +123,28 @@ Health endpoint:
 - `npm run db:generate` - generate Prisma client
 - `npm run db:seed` - seed core data
 - `npm run qa:phase2` - phase 2 acceptance QA checks
+- `npm run qa:phase3` - phase 3 acceptance QA checks
 
-## QA Coverage (Phase 2)
+## QA Coverage
 
-The Phase 2 QA script validates:
+### Phase 2 QA validates:
 
 - Seed data availability (2+ problems, 5+ test cases)
 - User -> Submissions relation
 - Problem -> TestCases relation
 - Submission -> ExecutionResults relation
 - Foreign key enforcement (invalid insert rejected)
+
+### Phase 3 QA validates:
+
+- Register returns token and public user payload
+- Login returns JWT and rejects invalid credentials
+- Passwords are hashed in DB and not returned in API
+- Protected route behavior (`401` without token, `200` with valid token)
+- Public problems API availability
+- Submit API auth enforcement and validation errors
+- Submission persistence with status `QUEUED`
+- Standardized API error response format: `{ error, code }`
 
 ## Security and Repository Hygiene
 
@@ -141,10 +156,23 @@ The Phase 2 QA script validates:
 
 Planned upcoming phases:
 
-- Phase 3: JWT auth and protected APIs
 - Phase 4: BullMQ queue integration
 - Phase 5: Docker-based code execution engine
 - Phase 6+: Evaluation, lifecycle tracking, realtime updates, hardening, deployment
+
+## Phase 3 API Endpoints
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/protected`
+- `GET /api/problems`
+- `POST /api/submit`
+
+Submission behavior in Phase 3:
+
+- Auth required
+- Stores submission with status `QUEUED`
+- Does not execute code yet (execution starts in later phases)
 
 ## Development Policy
 
