@@ -150,18 +150,6 @@ Health endpoint:
 
 
 ## QA Coverage
-### Phase 6 QA validates:
-
-- Submission verdict is computed and persisted for every submission
-- Verdict priority order: COMPILE_ERROR > TIMEOUT > RUNTIME_ERROR > WRONG_ANSWER > ACCEPTED
-- Submission counters: totalTests, passedTests, failedTests are correct
-- All-pass submission yields ACCEPTED
-- Any failed test yields WRONG_ANSWER
-- Any timeout yields TIMEOUT (unless compile error present)
-- Any runtime crash yields RUNTIME_ERROR (unless timeout/compile error present)
-- Compile error yields COMPILE_ERROR and halts further test execution
-- Aggregation is deterministic and proven by synthetic collision test
-
 ### Phase 2 QA validates:
 
 - Seed data availability (2+ problems, 5+ test cases)
@@ -200,6 +188,18 @@ Health endpoint:
 - Output size capping with truncation signaling
 - Worker to execution engine integration and per-test-case `ExecutionResult` persistence
 - Temporary execution workspace cleanup after execution
+
+### Phase 6 QA validates:
+
+- Submission verdict is computed and persisted for every submission
+- Verdict priority order: COMPILE_ERROR > TIMEOUT > RUNTIME_ERROR > WRONG_ANSWER > ACCEPTED
+- Submission counters: totalTests, passedTests, failedTests are correct
+- All-pass submission yields ACCEPTED
+- Any failed test yields WRONG_ANSWER
+- Any timeout yields TIMEOUT (unless compile error present)
+- Any runtime crash yields RUNTIME_ERROR (unless timeout/compile error present)
+- Compile error yields COMPILE_ERROR and halts further test execution
+- Aggregation is deterministic and proven by synthetic collision test
 
 ## Security and Repository Hygiene
 
