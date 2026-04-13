@@ -17,6 +17,7 @@
     "qa:phase3": "tsx prisma/phase3-qa.ts",
     "qa:phase4": "tsx prisma/phase4-qa.ts",
     "qa:phase5": "tsx prisma/phase5-qa.ts",
+    "qa:phase6": "tsx prisma/phase6-qa.ts",
     "worker": "tsx src/worker/worker.ts"
   },
   "dependencies": {

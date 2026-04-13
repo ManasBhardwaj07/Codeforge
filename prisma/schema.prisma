@@ -30,6 +30,14 @@ enum ProgrammingLanguage {
   JAVASCRIPT
 }
 
+enum SubmissionVerdict {
+  ACCEPTED
+  WRONG_ANSWER
+  TIMEOUT
+  RUNTIME_ERROR
+  COMPILE_ERROR
+}
+
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
@@ -78,6 +86,10 @@ model Submission {
   language         ProgrammingLanguage
   code             String            @db.Text
   status           SubmissionStatus  @default(QUEUED)
+  verdict          SubmissionVerdict?
+  totalTests       Int               @default(0)
+  passedTests      Int               @default(0)
+  failedTests      Int               @default(0)
   startedAt        DateTime?
   completedAt      DateTime?
   failedAt         DateTime?

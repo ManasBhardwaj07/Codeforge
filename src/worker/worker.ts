@@ -7,6 +7,7 @@ import {
   DEFAULT_PER_TEST_TIMEOUT_MS,
   executeInSandbox,
 } from "../services/execution.service";
+import { evaluateSubmission } from "../services/evaluation.service";
 
 const STALE_RUNNING_TIMEOUT_MS = 5 * 60 * 1000;
 const STALE_RECOVERY_INTERVAL_MS = 60 * 1000;
@@ -143,7 +144,7 @@ async function executeSubmission(submissionId: string) {
           inputSnapshot: pendingCase.input,
           expectedOutputSnapshot: pendingCase.expectedOutput,
           actualOutput: "",
-          stderr: `Global submission timeout exceeded (${DEFAULT_GLOBAL_TIMEOUT_MS}ms)`,
+          stderr: `[TIMEOUT] Global submission timeout exceeded (${DEFAULT_GLOBAL_TIMEOUT_MS}ms)`,
           exitCode: null,
           executionTimeMs: null,
           passed: false,
@@ -197,6 +198,30 @@ async function executeSubmission(submissionId: string) {
         executionTimeMs: outcome.executionTimeMs,
         passed,
       });
+
+      if (outcome.errorType === "COMPILE_ERROR") {
+        for (let pendingIndex = index + 1; pendingIndex < testCases.length; pendingIndex += 1) {
+          const pendingCase = testCases[pendingIndex];
+
+          if (!pendingCase) {
+            continue;
+          }
+
+          await createExecutionResultRecord({
+            submissionId,
+            testCaseId: pendingCase.id,
+            inputSnapshot: pendingCase.input,
+            expectedOutputSnapshot: pendingCase.expectedOutput,
+            actualOutput: "",
+            stderr: "[COMPILE_ERROR] Skipped due to compilation failure on an earlier test case",
+            exitCode: null,
+            executionTimeMs: null,
+            passed: false,
+          });
+        }
+
+        break;
+      }
     } catch (error) {
       infrastructureFailure = error instanceof Error ? error.message : "Unknown execution infrastructure failure";
 
@@ -236,6 +261,10 @@ const worker = new Worker<SubmissionJobData>(
       data: {
         status: SubmissionStatus.RUNNING,
         startedAt: new Date(),
+        verdict: null,
+        totalTests: 0,
+        passedTests: 0,
+        failedTests: 0,
         completedAt: null,
         failedAt: null,
       },
@@ -246,6 +275,7 @@ const worker = new Worker<SubmissionJobData>(
     }
 
     await executeSubmission(submissionId);
+    const evaluation = await evaluateSubmission(submissionId);
 
     const completed = await prisma.submission.updateMany({
       where: {
@@ -254,6 +284,10 @@ const worker = new Worker<SubmissionJobData>(
       },
       data: {
         status: SubmissionStatus.COMPLETED,
+        verdict: evaluation.verdict,
+        totalTests: evaluation.totalTests,
+        passedTests: evaluation.passedTests,
+        failedTests: evaluation.failedTests,
         completedAt: new Date(),
         failedAt: null,
       },
