@@ -3,14 +3,20 @@
 CodeForge is an asynchronous code execution platform built to demonstrate real backend systems thinking, relational data modeling, and safe workload execution architecture.
 
 
+
 This repository is developed phase by phase. The current implementation includes:
 
-- Phase 1: Project foundation
-- Phase 2: Core relational data model with migrations, seed data, and QA checks
-- Phase 3: JWT authentication, protected routes, and submission entry API
-- Phase 4: BullMQ queue pipeline with independent worker, lifecycle transitions, and QA
-- Phase 5: Docker sandbox execution engine (JavaScript + C++) with per-test execution, timeout enforcement, and persisted results
-- Phase 6: Submission verdict aggregation (ACCEPTED/WRONG_ANSWER/TIMEOUT/RUNTIME_ERROR/COMPILE_ERROR), schema extension, and deterministic evaluation logic with full QA
+**Phase 1:** Project foundation
+
+**Phase 2:** Core relational data model with migrations, seed data, and QA checks
+
+**Phase 3:** JWT authentication, protected routes, and submission entry API
+
+**Phase 4:** BullMQ queue pipeline with independent worker, lifecycle transitions, and QA
+
+**Phase 5:** Docker sandbox execution engine (JavaScript + C++) with per-test execution, timeout enforcement, and persisted results
+
+**Phase 6:** Submission verdict aggregation (ACCEPTED/WRONG_ANSWER/TIMEOUT/RUNTIME_ERROR/COMPILE_ERROR), schema extension, and deterministic evaluation logic with full QA
 
 ## Core Goal
 
