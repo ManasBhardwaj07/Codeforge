@@ -8,6 +8,7 @@ This repository is developed phase by phase. The current implementation includes
 - Phase 2: Core relational data model with migrations, seed data, and QA checks
 - Phase 3: JWT authentication, protected routes, and submission entry API
 - Phase 4: BullMQ queue pipeline with independent worker, lifecycle transitions, and QA
+- Phase 5: Docker sandbox execution engine (JavaScript + C++) with per-test execution, timeout enforcement, and persisted results
 
 ## Core Goal
 
@@ -28,7 +29,7 @@ Build a defendable end-to-end system with this mandatory flow:
 - Prisma ORM
 - Redis + BullMQ (async submission queue)
 - Dedicated Node worker process for queue execution
-- Docker (execution isolation planned for Phase 5)
+- Docker (execution isolation with resource limits and network restrictions)
 
 ## Project Structure
 
@@ -47,6 +48,7 @@ prisma/
 	phase2-qa.ts
 	phase3-qa.ts
 	phase4-qa.ts
+	phase5-qa.ts
 ```
 
 ## Current Data Model (Phase 2)
@@ -105,6 +107,7 @@ npm run db:seed
 npm run qa:phase2
 npm run qa:phase3
 npm run qa:phase4
+npm run qa:phase5
 ```
 
 ### 6. Start app
@@ -130,6 +133,7 @@ Health endpoint:
 - `npm run qa:phase2` - phase 2 acceptance QA checks
 - `npm run qa:phase3` - phase 3 acceptance QA checks
 - `npm run qa:phase4` - phase 4 queue + worker acceptance QA checks
+- `npm run qa:phase5` - phase 5 sandbox execution + persistence acceptance QA checks
 - `npm run worker` - start queue worker as separate process
 
 ## QA Coverage
@@ -162,6 +166,17 @@ Health endpoint:
 - Worker processing evidence (logs or transition fallback proof)
 - Queue retry policy and backoff behavior through configured BullMQ defaults
 
+### Phase 5 QA validates:
+
+- JavaScript sandbox execution correctness
+- C++ compile + run pipeline correctness
+- Compile error vs runtime error classification behavior
+- Per-test timeout handling and terminal timeout outcomes
+- Non-root execution in containerized runtime
+- Output size capping with truncation signaling
+- Worker to execution engine integration and per-test-case `ExecutionResult` persistence
+- Temporary execution workspace cleanup after execution
+
 ## Security and Repository Hygiene
 
 - `.env` is ignored by git
@@ -172,8 +187,7 @@ Health endpoint:
 
 Planned upcoming phases:
 
-- Phase 5: Docker-based code execution engine
-- Phase 6+: Evaluation, lifecycle tracking, realtime updates, hardening, deployment
+- Phase 6+: Scoring/evaluation expansion, realtime status streaming, observability hardening, deployment automation
 
 ## Phase 3 API Endpoints
 
@@ -197,6 +211,15 @@ Submission behavior in Phase 3:
 4. Worker picks job and atomically flips `QUEUED -> RUNNING`
 5. Worker completes and atomically sets `RUNNING -> COMPLETED`
 6. Failure paths set `FAILED` with `failedAt`; stale `RUNNING` records are recovered by timeout policy
+
+## Phase 5 Execution Flow
+
+1. Worker loads submission code and ordered problem test cases
+2. Worker executes each test case independently through `executeInSandbox`
+3. Sandbox runs user code in Docker with isolation controls (`--network none`, memory/CPU/PID limits, read-only rootfs, non-root user)
+4. Timeouts trigger forced container termination and timeout classification
+5. For C++, compile and run are executed as separate steps; runtime only starts if compile succeeds
+6. Worker persists one `ExecutionResult` per test case including snapshots, actual output, status, stderr, exit code, and execution time
 
 ## Development Policy
 
