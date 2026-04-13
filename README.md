@@ -2,6 +2,7 @@
 
 CodeForge is an asynchronous code execution platform built to demonstrate real backend systems thinking, relational data modeling, and safe workload execution architecture.
 
+
 This repository is developed phase by phase. The current implementation includes:
 
 - Phase 1: Project foundation
@@ -9,6 +10,7 @@ This repository is developed phase by phase. The current implementation includes
 - Phase 3: JWT authentication, protected routes, and submission entry API
 - Phase 4: BullMQ queue pipeline with independent worker, lifecycle transitions, and QA
 - Phase 5: Docker sandbox execution engine (JavaScript + C++) with per-test execution, timeout enforcement, and persisted results
+- Phase 6: Submission verdict aggregation (ACCEPTED/WRONG_ANSWER/TIMEOUT/RUNTIME_ERROR/COMPILE_ERROR), schema extension, and deterministic evaluation logic with full QA
 
 ## Core Goal
 
@@ -101,6 +103,7 @@ npm run db:generate
 npm run db:seed
 ```
 
+
 ### 5. Run QA checks
 
 ```bash
@@ -108,6 +111,7 @@ npm run qa:phase2
 npm run qa:phase3
 npm run qa:phase4
 npm run qa:phase5
+npm run qa:phase6
 ```
 
 ### 6. Start app
@@ -134,9 +138,23 @@ Health endpoint:
 - `npm run qa:phase3` - phase 3 acceptance QA checks
 - `npm run qa:phase4` - phase 4 queue + worker acceptance QA checks
 - `npm run qa:phase5` - phase 5 sandbox execution + persistence acceptance QA checks
-- `npm run worker` - start queue worker as separate process
+
+	- `npm run qa:phase6` - phase 6 verdict aggregation, priority, and stats QA
+	- `npm run worker` - start queue worker as separate process
+
 
 ## QA Coverage
+### Phase 6 QA validates:
+
+- Submission verdict is computed and persisted for every submission
+- Verdict priority order: COMPILE_ERROR > TIMEOUT > RUNTIME_ERROR > WRONG_ANSWER > ACCEPTED
+- Submission counters: totalTests, passedTests, failedTests are correct
+- All-pass submission yields ACCEPTED
+- Any failed test yields WRONG_ANSWER
+- Any timeout yields TIMEOUT (unless compile error present)
+- Any runtime crash yields RUNTIME_ERROR (unless timeout/compile error present)
+- Compile error yields COMPILE_ERROR and halts further test execution
+- Aggregation is deterministic and proven by synthetic collision test
 
 ### Phase 2 QA validates:
 
@@ -183,11 +201,12 @@ Health endpoint:
 - `.env.example` is committed for safe onboarding
 - Generated Prisma output is ignored and recreated via scripts
 
+
 ## Roadmap
 
 Planned upcoming phases:
 
-- Phase 6+: Scoring/evaluation expansion, realtime status streaming, observability hardening, deployment automation
+- Phase 7+: Realtime status streaming, observability hardening, deployment automation
 
 ## Phase 3 API Endpoints
 
@@ -220,6 +239,18 @@ Submission behavior in Phase 3:
 4. Timeouts trigger forced container termination and timeout classification
 5. For C++, compile and run are executed as separate steps; runtime only starts if compile succeeds
 6. Worker persists one `ExecutionResult` per test case including snapshots, actual output, status, stderr, exit code, and execution time
+
+
+## Phase 6 Verdict Aggregation Flow
+
+1. Worker executes all test cases and persists ExecutionResult rows
+2. Aggregation function reads all results and computes:
+	- verdict (by priority)
+	- totalTests
+	- passedTests
+	- failedTests
+3. Submission is updated with verdict and stats
+4. All edge cases (compile error, timeout, runtime error, wrong answer, accepted) are handled deterministically
 
 ## Development Policy
 
