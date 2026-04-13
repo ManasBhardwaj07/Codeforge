@@ -82,34 +82,29 @@ Key modeling decisions:
 ### 1. Clone and install
 
 ```bash
-npm install
-```
+## Scripts
 
-### 2. Configure environment
+- `npm run dev` — Start development server
+- `npm run build` — Production build
+- `npm run lint` — Lint checks
+- `npm run typecheck` — Strict TypeScript check
+- `npm run check` — Lint + typecheck + build
+- `npm run db:migrate` — Apply dev migration
+- `npm run db:generate` — Generate Prisma client
+- `npm run db:seed` — Seed core data
+- `npm run qa:phase2` — Phase 2 acceptance QA checks
+- `npm run qa:phase3` — Phase 3 acceptance QA checks
+- `npm run qa:phase4` — Phase 4 queue + worker acceptance QA checks
+- `npm run qa:phase5` — Phase 5 sandbox execution + persistence acceptance QA checks
+- `npm run qa:phase6` — Phase 6 verdict aggregation, priority, and stats QA checks
+- `npm run worker` — Start queue worker as separate process
 
-Copy `.env.example` to `.env` and set values.
+## Phase 7: Minimal but Complete Frontend
 
-Required keys:
-
-- `DATABASE_URL`
-- `REDIS_HOST`
-- `REDIS_PORT`
-- `JWT_SECRET`
-
-### 3. Run migrations and generate client
-
-```bash
-npm run db:migrate
-npm run db:generate
-```
-
-### 4. Seed sample data
-
-```bash
-npm run db:seed
-```
-
-
+- End-to-end user flows: authentication, problem browsing, code submission, verdict/result viewing, and submission history
+- Robust error handling, state persistence, and accessibility improvements
+- Output size control, clear empty states, and specific error messages
+- Fully integrated with backend APIs and JWT authentication
 ### 5. Run QA checks
 
 ```bash
