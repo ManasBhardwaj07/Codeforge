@@ -1,111 +1,185 @@
 # CodeForge
 
-CodeForge is an asynchronous code execution platform built to demonstrate real backend systems thinking, relational data modeling, and safe workload execution architecture.
+CodeForge is a full-stack asynchronous code execution platform designed to demonstrate real-world backend engineering, safe execution of untrusted workloads, and end-to-end system design.
 
+The project is built phase-by-phase with strict validation gates, ensuring each layer (data, auth, async processing, execution, evaluation, frontend) is independently correct and defensible.
 
+---
 
-This repository is developed phase by phase. The current implementation includes:
+## Core Objective
 
-**Phase 1:** Project foundation
-
-**Phase 2:** Core relational data model with migrations, seed data, and QA checks
-
-**Phase 3:** JWT authentication, protected routes, and submission entry API
-
-**Phase 4:** BullMQ queue pipeline with independent worker, lifecycle transitions, and QA
-
-**Phase 5:** Docker sandbox execution engine (JavaScript + C++) with per-test execution, timeout enforcement, and persisted results
-
-**Phase 6:** Submission verdict aggregation (ACCEPTED/WRONG_ANSWER/TIMEOUT/RUNTIME_ERROR/COMPILE_ERROR), schema extension, and deterministic evaluation logic with full QA
-
-## Core Goal
-
-Build a defendable end-to-end system with this mandatory flow:
+Build a production-style system with the following flow:
 
 1. User submits code
-2. API validates request
-3. Submission enters queue
-4. Worker executes code in isolated runtime
-5. Results persist to PostgreSQL
-6. Frontend displays submission status and result
+2. API validates and persists submission
+3. Submission is enqueued (Redis + BullMQ)
+4. Worker executes code in an isolated Docker sandbox
+5. Results are stored in PostgreSQL
+6. Verdict is computed deterministically
+7. Frontend displays real-time status and results
+
+---
 
 ## Tech Stack
 
-- Next.js (App Router)
-- TypeScript (strict mode)
-- PostgreSQL
-- Prisma ORM
-- Redis + BullMQ (async submission queue)
-- Dedicated Node worker process for queue execution
-- Docker (execution isolation with resource limits and network restrictions)
+* **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS
+* **Backend:** Node.js, Next.js API routes
+* **Database:** PostgreSQL + Prisma ORM
+* **Queue:** Redis + BullMQ
+* **Execution Engine:** Docker (isolated sandbox with resource limits)
+* **Auth:** JWT (secure, stateless authentication)
+
+---
+
+## Implemented Phases
+
+* **Phase 1:** Project foundation (strict TypeScript, structure, infra setup)
+* **Phase 2:** Relational data model with constraints, migrations, and QA
+* **Phase 3:** JWT authentication, protected routes, submission API
+* **Phase 4:** Async queue system (BullMQ + worker lifecycle)
+* **Phase 5:** Docker-based sandbox execution (JS + C++, timeout, isolation)
+* **Phase 6:** Deterministic verdict aggregation and submission stats
+* **Phase 7:** Minimal but complete frontend (submission flow, polling, history)
+
+---
 
 ## Project Structure
 
 ```text
 src/
-	app/           # App Router pages and API routes
-	lib/           # Infrastructure clients (env, prisma, redis)
-	services/      # Business/domain logic
-	worker/        # Queue worker process (BullMQ consumer)
-	types/         # Shared TypeScript types
+  app/           # Next.js pages and API routes
+  components/    # UI components
+  lib/           # Infrastructure (env, prisma, redis, auth)
+  services/      # Business logic (auth, submission, execution, evaluation)
+  worker/        # BullMQ worker process
+  types/         # Shared TypeScript types
 
 prisma/
-	schema.prisma
-	migrations/
-	seed.ts
-	phase2-qa.ts
-	phase3-qa.ts
-	phase4-qa.ts
-	phase5-qa.ts
+  schema.prisma
+  migrations/
+  seed.ts
 ```
 
-## Current Data Model (Phase 2)
+---
 
-Entities implemented:
+## Core Data Model
 
-- User
-- Problem
-- TestCase
-- Submission
-- ExecutionResult
+Entities:
 
-Key modeling decisions:
+* User
+* Problem
+* TestCase
+* Submission
+* ExecutionResult
 
-- Strong foreign keys for relational integrity
-- Submission lifecycle status enum (`QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`)
-- Programming language enum for controlled execution types
-- ExecutionResult snapshots (`inputSnapshot`, `expectedOutputSnapshot`, `actualOutput`) for reproducibility
-- Data-preserving migration from `sourceCode` to `code`
+Key decisions:
+
+* Strong foreign keys for integrity
+* Submission lifecycle: `QUEUED → RUNNING → COMPLETED → FAILED`
+* Per-test execution results for reproducibility
+* Snapshot-based storage (`input`, `expected`, `actual`)
+* Deterministic verdict aggregation
+
+---
+
+## Execution System (Phase 5)
+
+* Code runs inside **Docker containers**, not the host
+* Isolation includes:
+
+  * no network access
+  * memory/CPU limits
+  * read-only filesystem
+  * non-root user
+* Supports:
+
+  * JavaScript (Node)
+  * C++ (compile + run separation)
+* Enforces:
+
+  * per-test timeout
+  * global execution safety
+* Ensures:
+
+  * cleanup of containers and temp files
+
+---
+
+## Verdict System (Phase 6)
+
+Final submission verdict is derived from test results using strict priority:
+
+```text
+COMPILE_ERROR > TIMEOUT > RUNTIME_ERROR > WRONG_ANSWER > ACCEPTED
+```
+
+Each submission stores:
+
+* verdict
+* total tests
+* passed tests
+* failed tests
+
+---
+
+## Frontend (Phase 7)
+
+Minimal, functional, and system-focused UI:
+
+* Problem browsing
+* Code submission interface
+* Real-time polling for execution status
+* Per-test result visualization
+* Submission history
+* JWT-based authentication
+
+Key features:
+
+* Polling with cleanup and resume support
+* State persistence via localStorage
+* Output truncation for large responses
+* Clear loading, error, and empty states
+
+---
 
 ## Setup
 
-### 1. Clone and install
+### 1. Clone and Install
 
 ```bash
-## Scripts
+git clone https://github.com/ManasBhardwaj07/Codeforge.git
+cd codeforge
+npm install
+```
 
-- `npm run dev` — Start development server
-- `npm run build` — Production build
-- `npm run lint` — Lint checks
-- `npm run typecheck` — Strict TypeScript check
-- `npm run check` — Lint + typecheck + build
-- `npm run db:migrate` — Apply dev migration
-- `npm run db:generate` — Generate Prisma client
-- `npm run db:seed` — Seed core data
-- `npm run qa:phase2` — Phase 2 acceptance QA checks
-- `npm run qa:phase3` — Phase 3 acceptance QA checks
-- `npm run qa:phase4` — Phase 4 queue + worker acceptance QA checks
-- `npm run qa:phase5` — Phase 5 sandbox execution + persistence acceptance QA checks
-- `npm run qa:phase6` — Phase 6 verdict aggregation, priority, and stats QA checks
-- `npm run worker` — Start queue worker as separate process
+---
 
-## Phase 7: Minimal but Complete Frontend
+### 2. Configure Environment
 
-- End-to-end user flows: authentication, problem browsing, code submission, verdict/result viewing, and submission history
-- Robust error handling, state persistence, and accessibility improvements
-- Output size control, clear empty states, and specific error messages
-- Fully integrated with backend APIs and JWT authentication
-### 5. Run QA checks
+Create `.env` based on `.env.example`
+
+---
+
+### 3. Run Database
+
+```bash
+npm run db:migrate
+npm run db:generate
+npm run db:seed
+```
+
+---
+
+### 4. Start Services
+
+```bash
+npm run dev       # frontend + API
+npm run worker    # background worker (separate terminal)
+```
+
+---
+
+### 5. Run QA Checks
 
 ```bash
 npm run qa:phase2
@@ -115,148 +189,83 @@ npm run qa:phase5
 npm run qa:phase6
 ```
 
-### 6. Start app
-
-```bash
-npm run dev
-```
-
-Health endpoint:
-
-- `GET /api/health`
+---
 
 ## Scripts
 
-- `npm run dev` - start development server
-- `npm run build` - production build
-- `npm run lint` - lint checks
-- `npm run typecheck` - strict TypeScript check
-- `npm run check` - lint + typecheck + build
-- `npm run db:migrate` - apply dev migration
-- `npm run db:generate` - generate Prisma client
-- `npm run db:seed` - seed core data
-- `npm run qa:phase2` - phase 2 acceptance QA checks
-- `npm run qa:phase3` - phase 3 acceptance QA checks
-- `npm run qa:phase4` - phase 4 queue + worker acceptance QA checks
-- `npm run qa:phase5` - phase 5 sandbox execution + persistence acceptance QA checks
+* `npm run dev` — start development server
+* `npm run build` — production build
+* `npm run lint` — lint checks
+* `npm run typecheck` — strict TypeScript validation
+* `npm run check` — lint + typecheck + build
 
-	- `npm run qa:phase6` - phase 6 verdict aggregation, priority, and stats QA
-	- `npm run worker` - start queue worker as separate process
+### Database
 
+* `npm run db:migrate`
+* `npm run db:generate`
+* `npm run db:seed`
+
+### QA
+
+* `npm run qa:phase2`
+* `npm run qa:phase3`
+* `npm run qa:phase4`
+* `npm run qa:phase5`
+* `npm run qa:phase6`
+
+### Worker
+
+* `npm run worker`
+
+---
 
 ## QA Coverage
-### Phase 2 QA validates:
 
-- Seed data availability (2+ problems, 5+ test cases)
-- User -> Submissions relation
-- Problem -> TestCases relation
-- Submission -> ExecutionResults relation
-- Foreign key enforcement (invalid insert rejected)
+Each phase includes automated validation:
 
-### Phase 3 QA validates:
+* **Phase 2:** relational integrity, FK enforcement
+* **Phase 3:** auth flow, protected routes, validation
+* **Phase 4:** queue lifecycle, async behavior
+* **Phase 5:** sandbox execution, timeout, cleanup
+* **Phase 6:** verdict correctness and aggregation
 
-- Register returns token and public user payload
-- Login returns JWT and rejects invalid credentials
-- Passwords are hashed in DB and not returned in API
-- Protected route behavior (`401` without token, `200` with valid token)
-- Public problems API availability
-- Submit API auth enforcement and validation errors
-- Submission persistence with status `QUEUED`
-- Standardized API error response format: `{ error, code }`
+---
 
-### Phase 4 QA validates:
+## Security Practices
 
-- Worker starts in a separate process
-- Submit API remains non-blocking while work executes asynchronously
-- Queue job is created and visible by submission id
-- Submission lifecycle transitions: `QUEUED -> RUNNING -> COMPLETED`
-- Worker processing evidence (logs or transition fallback proof)
-- Queue retry policy and backoff behavior through configured BullMQ defaults
+* `.env` is ignored
+* `.env.example` provided
+* No hardcoded secrets
+* Containerized execution for untrusted code
+* Resource limits enforced
 
-### Phase 5 QA validates:
+---
 
-- JavaScript sandbox execution correctness
-- C++ compile + run pipeline correctness
-- Compile error vs runtime error classification behavior
-- Per-test timeout handling and terminal timeout outcomes
-- Non-root execution in containerized runtime
-- Output size capping with truncation signaling
-- Worker to execution engine integration and per-test-case `ExecutionResult` persistence
-- Temporary execution workspace cleanup after execution
+## Development Approach
 
-### Phase 6 QA validates:
+* Strict phase-based development
+* Each phase requires measurable acceptance criteria
+* QA-driven validation before progression
+* Clear separation of concerns across layers
 
-- Submission verdict is computed and persisted for every submission
-- Verdict priority order: COMPILE_ERROR > TIMEOUT > RUNTIME_ERROR > WRONG_ANSWER > ACCEPTED
-- Submission counters: totalTests, passedTests, failedTests are correct
-- All-pass submission yields ACCEPTED
-- Any failed test yields WRONG_ANSWER
-- Any timeout yields TIMEOUT (unless compile error present)
-- Any runtime crash yields RUNTIME_ERROR (unless timeout/compile error present)
-- Compile error yields COMPILE_ERROR and halts further test execution
-- Aggregation is deterministic and proven by synthetic collision test
-
-## Security and Repository Hygiene
-
-- `.env` is ignored by git
-- `.env.example` is committed for safe onboarding
-- Generated Prisma output is ignored and recreated via scripts
-
+---
 
 ## Roadmap
 
-Planned upcoming phases:
+* Phase 8: Production hardening (Dockerization, deployment, rate limiting, recovery)
+* Future: observability, scaling, execution optimizations
 
-- Phase 7+: Realtime status streaming, observability hardening, deployment automation
+---
 
-## Phase 3 API Endpoints
+## Summary
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/protected`
-- `GET /api/problems`
-- `POST /api/submit`
+CodeForge is a project.
+that demonstrates:
 
-Submission behavior in Phase 3:
+* asynchronous system design
+* safe execution of untrusted workloads
+* relational modeling
+* deterministic evaluation logic
+* full-stack integration
 
-- Auth required
-- Stores submission with status `QUEUED`
-- In current system (Phase 4), submissions are queued and consumed asynchronously by the worker
-
-## Phase 4 Runtime Flow
-
-1. `POST /api/submit` authenticates and validates payload
-2. Service creates a `Submission` row with status `QUEUED`
-3. Service enqueues BullMQ job with deterministic job id
-4. Worker picks job and atomically flips `QUEUED -> RUNNING`
-5. Worker completes and atomically sets `RUNNING -> COMPLETED`
-6. Failure paths set `FAILED` with `failedAt`; stale `RUNNING` records are recovered by timeout policy
-
-## Phase 5 Execution Flow
-
-1. Worker loads submission code and ordered problem test cases
-2. Worker executes each test case independently through `executeInSandbox`
-3. Sandbox runs user code in Docker with isolation controls (`--network none`, memory/CPU/PID limits, read-only rootfs, non-root user)
-4. Timeouts trigger forced container termination and timeout classification
-5. For C++, compile and run are executed as separate steps; runtime only starts if compile succeeds
-6. Worker persists one `ExecutionResult` per test case including snapshots, actual output, status, stderr, exit code, and execution time
-
-
-## Phase 6 Verdict Aggregation Flow
-
-1. Worker executes all test cases and persists ExecutionResult rows
-2. Aggregation function reads all results and computes:
-	- verdict (by priority)
-	- totalTests
-	- passedTests
-	- failedTests
-3. Submission is updated with verdict and stats
-4. All edge cases (compile error, timeout, runtime error, wrong answer, accepted) are handled deterministically
-
-## Development Policy
-
-This project follows strict phase gates:
-
-- Each phase requires measurable acceptance criteria
-- No phase is marked complete without validation evidence
-- README is updated phase by phase as implementation evolves
+---
